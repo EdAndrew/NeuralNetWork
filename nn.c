@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 #include "nn.h"
 
 double rand_0_1()
@@ -13,6 +14,11 @@ double rand_0_1()
 	}
 
 	return (rand() % 10) * 0.1;
+}
+
+double sigmoid(double x)
+{
+	return 1 / (exp(-x) + 1);
 }
 
 int NNet_init(NNet *pN, int d, int q, int l)
@@ -126,12 +132,106 @@ int NNet_fini(NNet *pN)
 	return 0;
 }
 
+int do_predict(NNet *pN, double *input, double *output)
+{
+	if (pN == NULL)
+	{
+		fprintf(stderr, "Network is not exist.\n");
+		return -1;
+	}
+	if (input == NULL)
+	{
+		fprintf(stderr, "data is not exist.\n");
+		return -1;
+	}
+
+	int i, j;	
+	double outHidden[pN->q];
+	double outTmp;
+	
+	//Compute the output of hidden layer
+	for (i = 0; i < pN->q; ++i)
+	{
+		outTmp = 0.0;
+		for (j = 0; j < pN->d; ++j)
+		{
+			outTmp += input[j] * pN->wh[i][j];
+		}
+		outTmp += 1.0 * pN->wh[i][pN->d];
+		outHidden[i] = sigmoid(outTmp);	
+		
+	}
+
+	//Compute the output of output layer
+	for (i = 0; i < pN->l; ++i)
+	{
+		outTmp = 0.0;
+		for (j = 0; j < pN->q; ++j)
+		{
+			outTmp += outHidden[i] * pN->wo[i][j];
+		}
+		outTmp += 1.0 * pN->wo[i][pN->q];
+		output[i] = sigmoid(outTmp);
+	}
+	
+	return 0;	
+}
+
+int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
+{
+	if (pN == NULL)
+	{
+		fprintf(stderr, "network is not exist.\n");
+		return -1;
+	}
+	if (train == NULL)
+	{
+		fprintf(stderr, "train is not exist.\n");
+		return -1;
+	}
+	if (target == NULL)
+	{
+		fprintf(stderr, "target is not exist.\n");
+		return -1;
+	}
+	if (size <= 0)
+	{
+		fprintf(stderr, "size is error.\n");
+		return -1;
+	}
+	if (rate <= 1e-15 || rate >= 1.0 - 1e-15)
+	{
+		fprintf(stderr, "rate is error.\n");
+		return -1;
+	}
+
+	int i;
+	do
+	{
+
+	}while(E < MIN_TRAIN ||i < MAX_TRAIN);	
+		
+
+}
+
 int main()
 {
 	NNet nn;
+	int i;
+	double input[3] = {1, 1, 1};
+	double output[3];
+
 	NNet_init(&nn, 3, 4, 3);
+	do_predict(&nn, input, output);
+	for (i = 0; i < 3; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
 	NNet_fini(&nn);
 }
+
+
+
+
 
 
 
