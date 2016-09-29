@@ -132,7 +132,7 @@ int NNet_fini(NNet *pN)
 	return 0;
 }
 
-int do_predict(NNet *pN, double *input, double *output)
+int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 {
 	if (pN == NULL)
 	{
@@ -146,7 +146,6 @@ int do_predict(NNet *pN, double *input, double *output)
 	}
 
 	int i, j;	
-	double outHidden[pN->q];
 	double outTmp;
 	
 	//Compute the output of hidden layer
@@ -205,9 +204,35 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 		return -1;
 	}
 
-	int i;
+	int i, j, k;
+	double output[pN->l];
+	double outHidden[pN->q];
+	double gradOut[pN->l], gradHidden[pN->q];
+	double deltaOut, deltaHidden;
 	do
 	{
+		for (i = 0; i < size; ++i)
+		{
+			do_predict(pN, train[i], output, outHidden);
+			inc_gred_out(gradOut);
+			inc_gred_hidden(gradHidden);
+			
+			//update weight of out layer 
+			for (j = 0; j < pN->l; ++j)
+				for (k = 0; k < pN->q; ++k)
+				{
+					pN->wo[j][k] += rate * gradOut[j] * outHidden[k];
+				}
+				
+			for (j = 0; j < pN->l; ++j)
+			{
+				pN->wo[j][pN->l] += -1.0 * rate * gradeOut[j];
+			}
+			
+
+			
+			
+		}
 
 	}while(E < MIN_TRAIN ||i < MAX_TRAIN);	
 		
@@ -228,6 +253,7 @@ int main()
 	printf("\n");
 	NNet_fini(&nn);
 }
+
 
 
 
