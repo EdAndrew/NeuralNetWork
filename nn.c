@@ -176,6 +176,33 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 	return 0;	
 }
 
+int inc_gred_out(double *output, int len, int *target, double *gradOut)
+{		
+	int i;
+	for (i = 0; i < len; ++i)
+	{
+		gradOut[i] = output[i] * (1 - output[i]) * ((double)target[i] - output[i]);
+	}
+	return 0;
+}
+
+int inc_gred_hidden(NNet *pN, double *outHidden, double *gradOut, double *gradHidden)
+{
+	int i, j;
+	double sum;
+	for (i = 0; i < pN->q; ++i)
+	{
+		sum = 0.0;
+		for (j = 0; j < pN->l; ++j)
+		{
+			sum += pN->wo[j][i] * gradOut[j];
+		}
+		gradHidden[i] = sum * (outHidden[i]) * (1 - outHidden[i]);
+	}
+	return 0;
+}
+
+
 int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 {
 	if (pN == NULL)
@@ -209,28 +236,41 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 	double outHidden[pN->q];
 	double gradOut[pN->l], gradHidden[pN->q];
 	double deltaOut, deltaHidden;
+	double e;
 	do
 	{
 		for (i = 0; i < size; ++i)
 		{
 			do_predict(pN, train[i], output, outHidden);
-			inc_gred_out(gradOut);
+			inc_gred_out(output, pN->l, target, gradOut);
 			inc_gred_hidden(gradHidden);
 			
 			//update weight of out layer 
 			for (j = 0; j < pN->l; ++j)
+			{
 				for (k = 0; k < pN->q; ++k)
 				{
 					pN->wo[j][k] += rate * gradOut[j] * outHidden[k];
 				}
-				
+			}
 			for (j = 0; j < pN->l; ++j)
 			{
 				pN->wo[j][pN->l] += -1.0 * rate * gradeOut[j];
 			}
 			
 
-			
+			//update weight of hidden layer
+			for (j = 0; j < pN->q; ++j)
+			{
+				for(k = 0; k < pN->d; ++k)
+				{
+					pN->wh[j][k] += rate * gradHidden[j] * input[k];
+				}
+			}
+			for (j = 0; j < pN->l; ++j)
+			{
+				pN->wh[j][pN->d] += -1.0 * rate * gradHidden[j];
+			}
 			
 		}
 
