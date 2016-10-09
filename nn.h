@@ -12,8 +12,8 @@ typedef struct NeuralNetWork
 }NNet;
 
 int do_predict(NNet *pN, double *input, double *output, double *outHidden);
-
+double sigmoid(double x);
 #define MIN_TRAIN 0.01
-#define MAX_TRAIN_TURN 10000
+#define MAX_TRAIN_TURN 200
 
 #endif

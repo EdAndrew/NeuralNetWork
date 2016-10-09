@@ -170,7 +170,7 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 		outTmp = 0.0;
 		for (j = 0; j < pN->q; ++j)
 		{
-			outTmp += outHidden[i] * pN->wo[i][j];
+			outTmp += outHidden[j] * pN->wo[i][j];
 		}
 		outTmp += 1.0 * pN->wo[i][pN->q];
 		output[i] = sigmoid(outTmp);
@@ -246,7 +246,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 		//do training for the i-th data in training set
 		for (i = 0; i < size; ++i)
 		{
-			do_predict(pN, ((double *)train + i), output, outHidden);
+			do_predict(pN, ((double *)train + i * pN->d), output, outHidden);
 			inc_gred_out(output, pN->l, ((double *)target + i), gradOut);
 			inc_gred_hidden(pN, outHidden, gradOut, gradHidden);
 			
@@ -260,7 +260,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 			}
 			for (j = 0; j < pN->l; ++j)
 			{
-				pN->wo[j][pN->l] += -1.0 * rate * gradOut[j];
+				pN->wo[j][pN->q] += -1.0 * rate * gradOut[j];
 			}
 			
 
@@ -272,7 +272,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 					pN->wh[j][k] += rate * gradHidden[j] * *((double *)train + i * pN->d + k);
 				}
 			}
-			for (j = 0; j < pN->l; ++j)
+			for (j = 0; j < pN->q; ++j)
 			{
 				pN->wh[j][pN->d] += -1.0 * rate * gradHidden[j];
 			}
@@ -283,7 +283,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 		trainError = 0.0;
 		for (i = 0; i < size; ++i)
 		{
-			do_predict(pN, ((double *)train + i), output, outHidden);
+			do_predict(pN, ((double *)train + i * pN->d), output, outHidden);
 			for (j = 0; j < pN->l; ++j)
 			{
 				trainError += (output[j] - *((double *)target + i * pN->l + j)) * (output[j] - *((double *)target + i * pN->l + j));
@@ -341,7 +341,16 @@ int main()
 	NNet_fini(&nn);
 }
 
-
+//int main()
+//{
+//	int i;
+//
+//	for (i = 100; i > 0; --i)
+//		printf("sigmoid(%f) = %f\n", i * -1.0, sigmoid(i * -1.0));
+//	printf("sigmoid(%f) = %f\n", 0.0, sigmoid(0));
+//	for (i = 0; i < 100; ++i)
+//		printf("sigmoid(%f) = %f\n", i * 1.0, sigmoid(i * 1.0));
+//}
 
 
 
