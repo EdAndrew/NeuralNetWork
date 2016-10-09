@@ -21,6 +21,28 @@ double sigmoid(double x)
 	return 1 / (exp(-x) + 1);
 }
 
+int NNet_print(NNet *pN)
+{
+	int i, j;
+	printf("hidden layer is \n");
+	for (i = 0; i < pN->q; ++i)
+	{
+		for (j = 0; j < pN->d + 1; ++j)
+			printf("[%d][%d] = %f  ", i, j, pN->wh[i][j]);
+		printf("\n");
+	}
+	
+	printf("output layer is \n");
+	for (i = 0; i < pN->l; ++i)	
+	{
+		for (j = 0; j <pN->q + 1; ++j)
+			printf("[%d][%d] = %f  ", i, j, pN->wo[i][j]);
+		printf("\n");
+	}
+
+	return 0;	
+}
+
 int NNet_init(NNet *pN, int d, int q, int l)
 {
 	if (pN == NULL)
@@ -170,7 +192,7 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 		{
 			outTmp += input[j] * pN->wh[i][j];
 		}
-		outTmp += 1.0 * pN->wh[i][pN->d];
+		outTmp -= 1.0 * pN->wh[i][pN->d];
 		outHidden[i] = sigmoid(outTmp);	
 	}
 
@@ -182,7 +204,7 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 		{
 			outTmp += outHidden[j] * pN->wo[i][j];
 		}
-		outTmp += 1.0 * pN->wo[i][pN->q];
+		outTmp -= 1.0 * pN->wo[i][pN->q];
 		output[i] = sigmoid(outTmp);
 	}
 	
@@ -257,7 +279,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 		for (i = 0; i < size; ++i)
 		{
 			do_predict(pN, ((double *)train + i * pN->d), output, outHidden);
-			inc_gred_out(output, pN->l, ((double *)target + i * pN->d), gradOut);
+			inc_gred_out(output, pN->l, ((double *)target + i * pN->l), gradOut);
 			inc_gred_hidden(pN, outHidden, gradOut, gradHidden);
 			
 			//update weight of out layer 
@@ -286,6 +308,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 			{
 				pN->wh[j][pN->d] += -1.0 * rate * gradHidden[j];
 			}
+			NNet_print(pN);
 			
 		}
 
@@ -308,48 +331,47 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 	return 0;
 }
 
-int main()
-{
-	NNet nn;
-	int i;
-	double input1[3] = {1, 1, 1};
-	double input2[3] = {10, 10, 10};
-	double output[3];
-
-	NNet_init(&nn, 3, 4, 3);
-	NNet_predict(&nn, input1, output);
-	printf("before train:\n");
-	for (i = 0; i < 3; ++i)
-		printf("%f ", output[i]);
-	printf("\n");
-
-	NNet_predict(&nn, input2, output);
-	printf("before train:\n");
-	for (i = 0; i < 3; ++i)
-		printf("%f ", output[i]);
-	
-
-	//train test
-	double train[8][3] = {{0, 0, 0}, {1, 1, 1}, {0, 1, 2}, {2, 2, 1}, {9, 9 ,9}, {10, 9, 8}, {9, 7, 10}, {8, 10, 10}};
-	int target[8][3] =  {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
-	NNet_train(&nn, (double **)train, (double **)target, 8, 0.1);
-	
-	//predict
-	NNet_predict(&nn, input1, output);
-	printf("\nafter train:\n"); 
-	for (i = 0; i < 3; ++i)
-		printf("%f ", output[i]);
-	printf("\n");
-
-	NNet_predict(&nn, input2, output);
-	printf("after train:\n"); 
-	for (i = 0; i < 3; ++i)
-		printf("%f ", output[i]);
-	printf("\n");
-
-
-	NNet_fini(&nn);
-}
+//int main()
+//{
+//	NNet nn;
+//	int i;
+//	double input1[3] = {1, 1, 1}; //	double input2[3] = {10, 10, 10};
+//	double output[3];
+//
+//	NNet_init(&nn, 3, 4, 3);
+//	NNet_predict(&nn, input1, output);
+//	printf("before train:\n");
+//	for (i = 0; i < 3; ++i)
+//		printf("%f ", output[i]);
+//	printf("\n");
+//
+//	NNet_predict(&nn, input2, output);
+//	printf("before train:\n");
+//	for (i = 0; i < 3; ++i)
+//		printf("%f ", output[i]);
+//	
+//
+//	//train test
+//	double train[8][3] = {{0, 0, 0}, {1, 1, 1}, {0, 1, 2}, {2, 2, 1}, {9, 9 ,9}, {10, 9, 8}, {9, 7, 10}, {8, 10, 10}};
+//	double target[8][3] =  {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
+//	NNet_train(&nn, (double **)train, (double **)target, 8, 0.1);
+//	
+//	//predict
+//	NNet_predict(&nn, input1, output);
+//	printf("\nafter train:\n"); 
+//	for (i = 0; i < 3; ++i)
+//		printf("%f ", output[i]);
+//	printf("\n");
+//
+//	NNet_predict(&nn, input2, output);
+//	printf("after train:\n"); 
+//	for (i = 0; i < 3; ++i)
+//		printf("%f ", output[i]);
+//	printf("\n");
+//
+//
+//	NNet_fini(&nn);
+//}
 
 //int main()
 //{
@@ -362,11 +384,73 @@ int main()
 //		printf("sigmoid(%f) = %f\n", i * 1.0, sigmoid(i * 1.0));
 //}
 
+ 
+
+ 
+int main()
+{
+	NNet nn;
+	int i;
+	double input1[2] = {0, 0};
+	double input2[2] = {1, 0};
+	double output[2];
+
+	NNet_init(&nn, 2, 3, 1);
+	NNet_predict(&nn, input1, output);
+	printf("before train:\n");
+	for (i = 0; i < 1; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
+
+	NNet_predict(&nn, input2, output);
+	printf("before train:\n");
+	for (i = 0; i < 1; ++i)
+		printf("%f ", output[i]);
+	
+
+	//train test
+	double train[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+	double target[4][1] =  {{1}, {0}, {0}, {1}};
+	NNet_train(&nn, (double **)train, (double **)target, 4, 0.2);
+	
+	//predict
+	NNet_predict(&nn, input1, output);
+	printf("\nafter train:\n"); 
+	for (i = 0; i < 1; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
+
+	NNet_predict(&nn, input2, output);
+	printf("after train:\n"); 
+	for (i = 0; i < 1; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
 
 
+	NNet_fini(&nn);
+}
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
 
 
-
-
-
+ 
 
