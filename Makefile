@@ -1,2 +1,2 @@
 nn : nn.c
-	gcc nn.c -lm -Wall -o nn
+	gcc nn.c -lm -Wall -g -o nn

@@ -55,11 +55,15 @@ int NNet_init(NNet *pN, int d, int q, int l)
 			goto e1;
 		}
 	}
+
+	//set random value for hidden layer
 	for (h = 0; h < q; ++h)
-		for (i = 0; i < d+1; ++i)
 	{
-		pN->wh[h][i] = rand_0_1();
-		//printf("wh[%d][%d] = %f\n", h, i, pN->wh[h][i]);
+		for (i = 0; i < d+1; ++i)
+		{
+			pN->wh[h][i] = rand_0_1();
+			//printf("wh[%d][%d] = %f\n", h, i, pN->wh[h][i]);
+		}
 	}
 	
 	//初始化输出层参数
@@ -78,11 +82,15 @@ int NNet_init(NNet *pN, int d, int q, int l)
 			goto e2;
 		}
 	}
+
+	//set random value for output layer
 	for (j = 0; j < l; ++j)
-		for (h = 0; h < q+1; ++h)
 	{
-		pN->wo[j][h] = rand_0_1();
-		//printf("wo[%d][%d] = %f\n", j, h, pN->wo[j][h]);
+		for (h = 0; h < q+1; ++h)
+		{
+			pN->wo[j][h] = rand_0_1();
+			//printf("wo[%d][%d] = %f\n", j, h, pN->wo[j][h]);
+		}
 	}
 
 	return 0;
@@ -100,7 +108,10 @@ e1:
 
 int NNet_fini(NNet *pN)
 {
-	if (pN == NULL) return -1; int i; 
+	if (pN == NULL) 
+		return -1; 
+	
+	int i; 
 	if (pN->wo != NULL)
 	{
 		for (i = 0; i < pN->l; ++i)
@@ -161,7 +172,6 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 		}
 		outTmp += 1.0 * pN->wh[i][pN->d];
 		outHidden[i] = sigmoid(outTmp);	
-		
 	}
 
 	//Compute the output of output layer
@@ -247,7 +257,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 		for (i = 0; i < size; ++i)
 		{
 			do_predict(pN, ((double *)train + i * pN->d), output, outHidden);
-			inc_gred_out(output, pN->l, ((double *)target + i), gradOut);
+			inc_gred_out(output, pN->l, ((double *)target + i * pN->d), gradOut);
 			inc_gred_hidden(pN, outHidden, gradOut, gradHidden);
 			
 			//update weight of out layer 
