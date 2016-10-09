@@ -100,11 +100,7 @@ e1:
 
 int NNet_fini(NNet *pN)
 {
-	if (pN == NULL)
-		return -1;
-	
-	int i;
-
+	if (pN == NULL) return -1; int i; 
 	if (pN->wo != NULL)
 	{
 		for (i = 0; i < pN->l; ++i)
@@ -130,6 +126,13 @@ int NNet_fini(NNet *pN)
 	}
 
 	return 0;
+}
+
+int NNet_predict(NNet *pN, double *input, double *output)
+{
+	double outHidden[pN->q];
+	do_predict(pN, input, output, outHidden);
+	return 0;	
 }
 
 int do_predict(NNet *pN, double *input, double *output, double *outHidden)
@@ -176,12 +179,12 @@ int do_predict(NNet *pN, double *input, double *output, double *outHidden)
 	return 0;	
 }
 
-int inc_gred_out(double *output, int len, int *target, double *gradOut)
+int inc_gred_out(double *output, int len, double *target, double *gradOut)
 {		
 	int i;
 	for (i = 0; i < len; ++i)
 	{
-		gradOut[i] = output[i] * (1 - output[i]) * ((double)target[i] - output[i]);
+		gradOut[i] = output[i] * (1 - output[i]) * (target[i] - output[i]);
 	}
 	return 0;
 }
@@ -203,7 +206,7 @@ int inc_gred_hidden(NNet *pN, double *outHidden, double *gradOut, double *gradHi
 }
 
 
-int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
+int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 {
 	if (pN == NULL)
 	{
@@ -231,19 +234,21 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 		return -1;
 	}
 
-	int i, j, k;
+	int i, j, k, turn = 0;
 	double output[pN->l];
 	double outHidden[pN->q];
 	double gradOut[pN->l], gradHidden[pN->q];
-	double deltaOut, deltaHidden;
-	double e;
+	double trainError;
+
+	//begin training
 	do
 	{
+		//do training for the i-th data in training set
 		for (i = 0; i < size; ++i)
 		{
-			do_predict(pN, train[i], output, outHidden);
-			inc_gred_out(output, pN->l, target, gradOut);
-			inc_gred_hidden(gradHidden);
+			do_predict(pN, ((double *)train + i), output, outHidden);
+			inc_gred_out(output, pN->l, ((double *)target + i), gradOut);
+			inc_gred_hidden(pN, outHidden, gradOut, gradHidden);
 			
 			//update weight of out layer 
 			for (j = 0; j < pN->l; ++j)
@@ -255,7 +260,7 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 			}
 			for (j = 0; j < pN->l; ++j)
 			{
-				pN->wo[j][pN->l] += -1.0 * rate * gradeOut[j];
+				pN->wo[j][pN->l] += -1.0 * rate * gradOut[j];
 			}
 			
 
@@ -264,7 +269,7 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 			{
 				for(k = 0; k < pN->d; ++k)
 				{
-					pN->wh[j][k] += rate * gradHidden[j] * input[k];
+					pN->wh[j][k] += rate * gradHidden[j] * *((double *)train + i * pN->d + k);
 				}
 			}
 			for (j = 0; j < pN->l; ++j)
@@ -274,23 +279,65 @@ int NNet_train(NNet *pN, double **train, int *target, int size, double rate)
 			
 		}
 
-	}while(E < MIN_TRAIN ||i < MAX_TRAIN);	
+		//compute training error
+		trainError = 0.0;
+		for (i = 0; i < size; ++i)
+		{
+			do_predict(pN, ((double *)train + i), output, outHidden);
+			for (j = 0; j < pN->l; ++j)
+			{
+				trainError += (output[j] - *((double *)target + i * pN->l + j)) * (output[j] - *((double *)target + i * pN->l + j));
 		
-
+			}
+		}
+		trainError /= 2 * size;
+		++turn;
+		printf("\n-------------------------\nTurn %d, training error is %f\n", turn, trainError);		
+	}while(trainError > MIN_TRAIN && turn < MAX_TRAIN_TURN);	
+		
+	return 0;
 }
 
 int main()
 {
 	NNet nn;
 	int i;
-	double input[3] = {1, 1, 1};
+	double input1[3] = {1, 1, 1};
+	double input2[3] = {10, 10, 10};
 	double output[3];
 
 	NNet_init(&nn, 3, 4, 3);
-	do_predict(&nn, input, output);
+	NNet_predict(&nn, input1, output);
+	printf("before train:\n");
 	for (i = 0; i < 3; ++i)
 		printf("%f ", output[i]);
 	printf("\n");
+
+	NNet_predict(&nn, input2, output);
+	printf("before train:\n");
+	for (i = 0; i < 3; ++i)
+		printf("%f ", output[i]);
+	
+
+	//train test
+	double train[8][3] = {{0, 0, 0}, {1, 1, 1}, {0, 1, 2}, {2, 2, 1}, {9, 9 ,9}, {10, 9, 8}, {9, 7, 10}, {8, 10, 10}};
+	int target[8][3] =  {{0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}, {1, 1, 1}};
+	NNet_train(&nn, (double **)train, (double **)target, 8, 0.1);
+	
+	//predict
+	NNet_predict(&nn, input1, output);
+	printf("\nafter train:\n"); 
+	for (i = 0; i < 3; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
+
+	NNet_predict(&nn, input2, output);
+	printf("after train:\n"); 
+	for (i = 0; i < 3; ++i)
+		printf("%f ", output[i]);
+	printf("\n");
+
+
 	NNet_fini(&nn);
 }
 
