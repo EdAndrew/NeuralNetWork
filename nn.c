@@ -61,7 +61,7 @@ int NNet_init(NNet *pN, int d, int q, int l)
 	
 	int i, h, j, t, i1;
 	
-	//初始化隐层参数
+	//initialize parameter of hidden layer
 	pN->wh = malloc(q * sizeof(double *));
 	if (pN->wh == NULL)
 	{
@@ -88,7 +88,7 @@ int NNet_init(NNet *pN, int d, int q, int l)
 		}
 	}
 	
-	//初始化输出层参数
+	//initialize parameter of output layer
 	pN->wo = malloc(l * sizeof(double *));
 	if (pN->wo == NULL)
 	{
@@ -308,8 +308,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 			{
 				pN->wh[j][pN->d] += -1.0 * rate * gradHidden[j];
 			}
-			NNet_print(pN);
-			
+			//NNet_print(pN);
 		}
 
 		//compute training error
@@ -326,7 +325,7 @@ int NNet_train(NNet *pN, double **train, double **target, int size, double rate)
 		trainError /= 2 * size;
 		++turn;
 		printf("\n-------------------------\nTurn %d, training error is %f\n", turn, trainError);		
-	}while(trainError > MIN_TRAIN && turn < MAX_TRAIN_TURN);	
+	}while(trainError > MIN_TRAIN_ERROR && turn < MAX_TRAIN_TURN);	
 		
 	return 0;
 }
@@ -391,8 +390,8 @@ int main()
 {
 	NNet nn;
 	int i;
-	double input1[2] = {0, 0};
-	double input2[2] = {1, 0};
+	double input1[2] = {0, 1};
+	double input2[2] = {9, 9};
 	double output[2];
 
 	NNet_init(&nn, 2, 3, 1);
@@ -409,9 +408,9 @@ int main()
 	
 
 	//train test
-	double train[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
-	double target[4][1] =  {{1}, {0}, {0}, {1}};
-	NNet_train(&nn, (double **)train, (double **)target, 4, 0.2);
+	double train[4][2] = {{0, 0}, {1, 0}, {10, 10}, {11, 9}};
+	double target[4][1] =  {{0}, {0}, {1}, {1}};
+	NNet_train(&nn, (double **)train, (double **)target, 4, 0.3);
 	
 	//predict
 	NNet_predict(&nn, input1, output);
@@ -431,26 +430,3 @@ int main()
 }
 
  
- 
-
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
-
- 
- 
- 
- 
- 
-
-
- 
-
