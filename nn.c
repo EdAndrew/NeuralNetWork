@@ -390,8 +390,8 @@ int main()
 {
 	NNet nn;
 	int i;
-	double input1[2] = {0, 1};
-	double input2[2] = {9, 9};
+	double input1[2] = {0, 0};
+	double input2[2] = {0, 1};
 	double output[2];
 
 	NNet_init(&nn, 2, 3, 1);
@@ -408,8 +408,8 @@ int main()
 	
 
 	//train test
-	double train[4][2] = {{0, 0}, {1, 0}, {10, 10}, {11, 9}};
-	double target[4][1] =  {{0}, {0}, {1}, {1}};
+	double train[4][2] = {{0, 0}, {1, 0}, {0, 1}, {1, 1}};
+	double target[4][1] =  {{0}, {1}, {1}, {0}};
 	NNet_train(&nn, (double **)train, (double **)target, 4, 0.3);
 	
 	//predict
